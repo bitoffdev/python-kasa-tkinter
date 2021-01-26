@@ -82,7 +82,7 @@ class ScrollableFrame(tkinter.ttk.Frame):
             self.canvas.yview_scroll(-1, "units")
 
         if sys.platform != "linux" and event.delta != 0:
-            self.canvas.yview_scroll(-1 * (event.delta / 120), "units")
+            self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
 
 class EditableText(tkinter.Frame):
