@@ -165,6 +165,17 @@ class BulbFrame(tkinter.Frame):
     async def _brightness_callback(self):
         return await update_bulb(self.bulb, self.brightness_slider.get())
 
+    async def _power_callback(self):
+        self.power_button["state"] = tkinter.DISABLED
+
+        try:
+            await (self.bulb.turn_off() if self.bulb.is_on else self.bulb.turn_on())
+            await self.bulb.update()
+        finally:
+            self.power_button["relief"] = "sunken" if is_on else "raised"
+            self.power_button["text"] = "Turn Off" if is_on else "Turn On"
+            self.power_button["state"] = tkinter.NORMAL
+
     @classmethod
     def for_bulb(cls, loop, bulb: kasa.SmartBulb, config, *args, **kwargs):
         """Create a new bulb frame given a SmartBulb
@@ -220,14 +231,29 @@ class BulbFrame(tkinter.Frame):
             self, bulb_name, lambda new_device_name: logger.info(new_device_name)
         ).grid(column=0, row=0, columnspan=3)
 
-        self.hue_label.grid(column=0, row=1)
-        self.hue_slider.grid(column=0, row=2)
+        self.power_button = tkinter.Button(
+            self,
+            text="Turn Off" if self.bulb.is_on else "Turn On",
+            width=12,
+            relief="sunken" if self.bulb.is_on else "raised",
+        )
+        self.power_button.bind("<ButtonRelease-1>",
+            lambda event, self=self, loop=loop: asyncio.run_coroutine_threadsafe(
+                self._power_callback(), loop
+            ),
+        )
 
-        self.saturation_label.grid(column=1, row=1)
-        self.saturation_slider.grid(column=1, row=2)
+        self.power_button.grid(column=0, row=1)
+        self.power_button.grid(column=0, row=2)
 
-        self.brightness_label.grid(column=2, row=1)
-        self.brightness_slider.grid(column=2, row=2)
+        self.hue_label.grid(column=1, row=1)
+        self.hue_slider.grid(column=1, row=2)
+
+        self.saturation_label.grid(column=2, row=1)
+        self.saturation_slider.grid(column=2, row=2)
+
+        self.brightness_label.grid(column=3, row=1)
+        self.brightness_slider.grid(column=3, row=2)
 
         return self
 
