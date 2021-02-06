@@ -156,17 +156,17 @@ class EditableText(tkinter.Frame):
 
 
 class BulbFrame(tkinter.Frame):
-    def _hue_callback(self, event):
-        asyncio.run(update_bulb(self.bulb, None, self.hue_slider.get()))
+    async def _hue_callback(self):
+        return await update_bulb(self.bulb, None, self.hue_slider.get())
 
-    def _saturation_callback(self, event):
-        asyncio.run(update_bulb(self.bulb, saturation=self.saturation_slider.get()))
+    async def _saturation_callback(self):
+        return await update_bulb(self.bulb, saturation=self.saturation_slider.get())
 
-    def _brightness_callback(self, event):
-        asyncio.run(update_bulb(self.bulb, self.brightness_slider.get()))
+    async def _brightness_callback(self):
+        return await update_bulb(self.bulb, self.brightness_slider.get())
 
     @classmethod
-    def for_bulb(cls, bulb: kasa.SmartBulb, config, *args, **kwargs):
+    def for_bulb(cls, loop, bulb: kasa.SmartBulb, config, *args, **kwargs):
         """Create a new bulb frame given a SmartBulb
 
         ... note:: I think using a classmethod here is a better approach than
@@ -182,19 +182,34 @@ class BulbFrame(tkinter.Frame):
         self.hue_slider = tkinter.Scale(
             self, from_=0, to=360, orient=tkinter.HORIZONTAL
         )
-        self.hue_slider.bind("<ButtonRelease-1>", self._hue_callback)
+        self.hue_slider.bind(
+            "<ButtonRelease-1>",
+            lambda event, self=self, loop=loop: asyncio.run_coroutine_threadsafe(
+                self._hue_callback(), loop
+            ),
+        )
         self.hue_slider.set(self.bulb.hsv[0])
 
         self.saturation_slider = tkinter.Scale(
             self, from_=0, to=100, orient=tkinter.HORIZONTAL
         )
-        self.saturation_slider.bind("<ButtonRelease-1>", self._saturation_callback)
+        self.saturation_slider.bind(
+            "<ButtonRelease-1>",
+            lambda event, self=self, loop=loop: asyncio.run_coroutine_threadsafe(
+                self._saturation_callback(), loop
+            ),
+        )
         self.saturation_slider.set(self.bulb.hsv[1])
 
         self.brightness_slider = tkinter.Scale(
             self, from_=0, to=100, orient=tkinter.HORIZONTAL
         )
-        self.brightness_slider.bind("<ButtonRelease-1>", self._brightness_callback)
+        self.brightness_slider.bind(
+            "<ButtonRelease-1>",
+            lambda event, self=self, loop=loop: asyncio.run_coroutine_threadsafe(
+                self._brightness_callback(), loop
+            ),
+        )
         self.brightness_slider.set(self.bulb.brightness)
 
         bulb_name = getattr(self.bulb, "alias", None) or self.bulb.mac
@@ -221,6 +236,17 @@ class KasaDevices(tkinter.Frame):
     def __init__(self, *args, **kwargs):
         super(self.__class__, self).__init__(*args, **kwargs)
 
+        # create an asyncio event loop running in a secondary thread
+        def exception_handler(loop, context):
+            loop.call_soon_threadsafe(
+                logger.error, "Caught exception {}".format(context)
+            )
+
+        self.event_loop = asyncio.new_event_loop()
+        self.event_loop.set_exception_handler(exception_handler)
+        self.event_thread = threading.Thread(target=self.event_loop.run_forever)
+        self.event_thread.start()
+
         self.device_lock = asyncio.Lock()
         # list of kasa devices
         self.kasa_devices = []
@@ -241,7 +267,7 @@ class KasaDevices(tkinter.Frame):
     async def update_widgets(self):
         for bulb in self._bulbs:
             if bulb.mac not in self.device_widgets:
-                w = BulbFrame.for_bulb(bulb, self.config, master=self)
+                w = BulbFrame.for_bulb(self.event_loop, bulb, self.config, master=self)
                 w.pack()
                 self.device_widgets[bulb.mac] = w
 
@@ -273,12 +299,22 @@ class KasaDevices(tkinter.Frame):
             self.kasa_devices.clear()
 
     def start_refresh(self):
-        def thread_loop():
-            asyncio.run(self._do_refresh())
+        """Returns a *concurrent* future, rather than an *asyncio* future. You
+        can block on the result from a *synchronous* thread using
+        self.start_refresh().result().
 
+        :rtype: concurrent.futures.Future
+        """
         logger.info("KasaDevices.start_refresh() called")
-        threading.Thread(target=thread_loop).start()
-        logger.info("KasaDevices.start_refresh() completed")
+
+        async def call_later(coro, *args, **kwargs):
+            # call later isn't particularly necessary, but by using it, out
+            # exceptions will go to the asyncio exceptions handler
+            self.event_loop.create_task(coro(*args, **kwargs))
+
+        return asyncio.run_coroutine_threadsafe(
+            call_later(self._do_refresh), self.event_loop
+        )
 
 
 def main():
