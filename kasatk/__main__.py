@@ -45,17 +45,29 @@ class ScrollableFrame(tkinter.ttk.Frame):
             "<Configure>",
             lambda event: self.canvas.configure(scrollregion=self.canvas.bbox("all")),
         )
-        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.canvas_frame_id = self.canvas.create_window(
+            (0, 0), window=self.scrollable_frame, anchor="nw"
+        )
         self.scrollbar = tkinter.ttk.Scrollbar(
             self, orient="vertical", command=self.canvas.yview
         )
         self.canvas.configure(yscrollcommand=self.scrollbar.set)
-        self.canvas.pack(side="left", fill="both", expand=True)
-        self.scrollbar.pack(side="right", fill="y")
+        self.canvas.pack(side="left", fill=tkinter.BOTH, expand=True)
+        self.scrollbar.pack(side="right", fill=tkinter.Y)
+
+        # update the inner content frame when the canvas resizes
+        self.canvas.bind("<Configure>", self._resize_canvas_frame)
 
         # bind mouse scroll only when the mouse is over our element
         self.canvas.bind("<Enter>", self._bind_mouse)
         self.canvas.bind("<Leave>", self._unbind_mouse)
+
+    def _resize_canvas_frame(self, event):
+        """Resize the width of the inner content frame"""
+        # Note that we intentionally do NOT update the height of the inner
+        # frame. We want that to be based on the amount of content so that we
+        # can scroll it.
+        self.canvas.itemconfig(self.canvas_frame_id, width=event.width)
 
     def _bind_mouse(self, event):
         if sys.platform == "linux":
@@ -131,7 +143,7 @@ class EditableText(tkinter.Frame):
 
     @property
     def pencil_icon(self):
-        """ ... note:: Make sure to store a reference to the result, as the
+        """... note:: Make sure to store a reference to the result, as the
         BitmapImage may otherwise get garbage collected. Passing it to
         tkinter.Label is not sufficient.
         (https://stackoverflow.com/a/31959529/2796349)
