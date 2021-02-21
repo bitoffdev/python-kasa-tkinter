@@ -229,7 +229,7 @@ class BulbFrame(tkinter.Frame):
         # here
         EditableText(
             self, bulb_name, lambda new_device_name: logger.info(new_device_name)
-        ).grid(column=0, row=0, columnspan=3)
+        ).grid(column=0, row=0, columnspan=4)
 
         self.power_button = tkinter.Button(
             self,
