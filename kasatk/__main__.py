@@ -172,8 +172,8 @@ class BulbFrame(tkinter.Frame):
             await (self.bulb.turn_off() if self.bulb.is_on else self.bulb.turn_on())
             await self.bulb.update()
         finally:
-            self.power_button["relief"] = "sunken" if is_on else "raised"
-            self.power_button["text"] = "Turn Off" if is_on else "Turn On"
+            self.power_button["relief"] = "sunken" if self.bulb.is_on else "raised"
+            self.power_button["text"] = "Turn Off" if self.bulb.is_on else "Turn On"
             self.power_button["state"] = tkinter.NORMAL
 
     @classmethod
