@@ -279,6 +279,26 @@ class KasaDevices(tkinter.Frame):
         # mapping from mac address to widget
         self.device_widgets = {}
 
+        async def process_devices():
+            # queue to process discovered devices
+            #
+            # this must be called from within the loop:
+            #   https://stackoverflow.com/a/53724990/2796349
+            self.device_queue = asyncio.Queue()
+
+
+            while True:
+                new_item = await self.device_queue.get()
+                logging.info("Discovered device: {}".format(repr(new_item)))
+                try:
+                    await self.add_device(new_item)
+                except Exception as exc:
+                    logging.error(exc)
+
+        self.event_loop.create_task(process_devices())
+
+        # TODO make sure that self.device_queue exists before exiting this function
+
         self.refresh_button = tkinter.Button(
             self, text="Refresh", command=self.start_refresh
         )
@@ -313,7 +333,7 @@ class KasaDevices(tkinter.Frame):
         self.refresh_button["state"] = tkinter.DISABLED
         self.refresh_button["text"] = "Refreshing..."
         await self.clear_devices()
-        await kasa.Discover.discover(on_discovered=self.add_device)
+        await kasa.Discover.discover(on_discovered=self.device_queue.put)
         self.refresh_button["state"] = tkinter.NORMAL
         self.refresh_button["text"] = "Refresh"
 
