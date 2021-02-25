@@ -385,5 +385,12 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     log_level = logging.CRITICAL - args.verbosity * 10
+    formatter = logging.Formatter(
+        "[%(asctime)s] p%(process)s {%(pathname)s:%(lineno)d} %(levelname)s - %(message)s",
+        "%m-%d %H:%M:%S",
+    )
     logging.basicConfig(level=log_level)
+    root = logging.getLogger()
+    hdlr = root.handlers[0]
+    hdlr.setFormatter(formatter)
     main()
