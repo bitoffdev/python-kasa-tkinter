@@ -237,7 +237,8 @@ class BulbFrame(tkinter.Frame):
             width=12,
             relief="sunken" if self.bulb.is_on else "raised",
         )
-        self.power_button.bind("<ButtonRelease-1>",
+        self.power_button.bind(
+            "<ButtonRelease-1>",
             lambda event, self=self, loop=loop: asyncio.run_coroutine_threadsafe(
                 self._power_callback(), loop
             ),
@@ -285,7 +286,6 @@ class KasaDevices(tkinter.Frame):
             # this must be called from within the loop:
             #   https://stackoverflow.com/a/53724990/2796349
             self.device_queue = asyncio.Queue()
-
 
             while True:
                 new_item = await self.device_queue.get()
