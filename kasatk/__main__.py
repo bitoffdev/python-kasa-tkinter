@@ -243,17 +243,17 @@ class BulbFrame(tkinter.Frame):
             ),
         )
 
-        self.power_button.grid(column=0, row=1)
-        self.power_button.grid(column=0, row=2)
+        self.power_button.grid(column=0, row=2, sticky="ns")
+        # self.power_button.grid(column=0, row=2)
 
         self.hue_label.grid(column=1, row=1)
         self.hue_slider.grid(column=1, row=2)
 
         self.saturation_label.grid(column=2, row=1)
-        self.saturation_slider.grid(column=2, row=2)
+        self.saturation_slider.grid(column=2, row=2, sticky="ns")
 
         self.brightness_label.grid(column=3, row=1)
-        self.brightness_slider.grid(column=3, row=2)
+        self.brightness_slider.grid(column=3, row=2, sticky="ns")
 
         return self
 
