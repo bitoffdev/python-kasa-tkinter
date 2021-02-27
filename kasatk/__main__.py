@@ -18,6 +18,16 @@ import kasa
 logger = logging.getLogger(__name__)
 
 
+def resource_path(relative_path):
+    """Find a resource in a PyInstaller executable, or in the local directory"""
+    if hasattr(sys, "_MEIPASS"):
+        logger.info("Finding resource inside PyInstaller executable")
+        p = os.path.join(sys._MEIPASS, relative_path)
+        assert os.path.exists(p)
+        return p
+    return os.path.join(os.path.abspath("."), relative_path)
+
+
 class LightState(TypedDict):
     on_off: int
     mode: str
@@ -370,7 +380,11 @@ def main():
     root = tkinter.Tk()
     root.title("Kasa Devices")
     root.geometry("500x400")
-    root.iconbitmap("extra/icon.ico")
+    try:
+        root.iconbitmap(resource_path("extra/icon.ico"))
+    except Exception as e:
+        logger.warning("Failed to load application icon.")
+        logger.error(e)
     scroll_frame = ScrollableFrame(root)
     device_frame = KasaDevices(scroll_frame.scrollable_frame)
     device_frame.pack()

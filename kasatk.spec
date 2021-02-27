@@ -1,5 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+RELATIVE_ICON_PATH = "./extra/icon.ico"
 block_cipher = None
 
 def kasa_dist_info_datas():
@@ -20,7 +21,8 @@ def kasa_dist_info_datas():
 a = Analysis(['kasatk/__main__.py'],
              pathex=['.\\env\\Lib\\site-packages\\', '.'],
              binaries=[],
-             datas=[kasa_dist_info_datas()],
+             # Note: the second item in each tuple MUST be a directory.
+             datas=[kasa_dist_info_datas(), (RELATIVE_ICON_PATH, "./extra")],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
@@ -44,5 +46,7 @@ exe = EXE(pyz,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          icon='extra/icon.ico',
+          icon=RELATIVE_ICON_PATH,
           console=False )
+
+# vi:syntax=python
