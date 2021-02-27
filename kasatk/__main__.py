@@ -54,21 +54,26 @@ class LightState(TypedDict):
 
 
 async def update_bulb(bulb, brightness=None, hue=None, saturation=None):
-    if brightness != None:
-        await bulb.set_brightness(brightness)
-    if hue != None or saturation != None:
-        state: LightState = await bulb.get_light_state()
-        await bulb.set_hsv(
-            hue if hue != None else state["hue"],
-            saturation if saturation != None else state["saturation"],
-            brightness if brightness != None else state["brightness"],
-        )
+    # note: all arguments need to ints
+    assert brightness is None or isinstance(brightness, int)
+    assert hue is None or isinstance(hue, int)
+    assert saturation is None or isinstance(saturation, int)
+
+    state: LightState = await bulb.get_light_state()
+    await bulb.set_hsv(
+        hue if hue != None else state["hue"],
+        saturation if saturation != None else state["saturation"],
+        brightness if brightness != None else state["brightness"],
+    )
 
 
 class ScrollableFrame(tkinter.ttk.Frame):
     def __init__(self, container, *args, **kwargs):
         super().__init__(container, *args, **kwargs)
-        self.canvas = tkinter.Canvas(self)
+        background = tkinter.ttk.Style().lookup("TFrame", "background")
+        self.canvas = tkinter.Canvas(
+            self, background=background, bd=0, highlightthickness=0
+        )
         self.scrollable_frame = tkinter.ttk.Frame(self.canvas)
         self.scrollable_frame.bind(
             "<Configure>",
@@ -126,7 +131,7 @@ class ScrollableFrame(tkinter.ttk.Frame):
             self.canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
 
 
-class EditableText(tkinter.Frame):
+class EditableText(tkinter.ttk.Frame):
     def __init__(self, container, initial_text_value, callback):
         super(self.__class__, self).__init__(container)
 
@@ -149,14 +154,19 @@ class EditableText(tkinter.Frame):
 
     def _render_static_mode(self):
         """render non-editable text"""
-        label_font = tkinter.font.Font(
-            family="Helvetica", name="appHighlightFont", size=12, weight="bold"
-        )
+        big_label_style_name = "my.TLabel"
+        style = tkinter.ttk.Style()
+        default_font_name = style.lookup("TLabel", "font")
+        default_font = tkinter.font.nametofont(default_font_name)
+        custom_font = {**default_font.actual(), "size": 12}
+        style.configure(big_label_style_name, font=custom_font)
 
-        text_label = tkinter.Label(self, text=self.text.get(), font=label_font)
+        text_label = tkinter.ttk.Label(
+            self, text=self.text.get(), style=big_label_style_name
+        )
         text_label.pack(side=tkinter.LEFT)
 
-        edit_label = tkinter.Label(self, image=self.pencil_icon)
+        edit_label = tkinter.ttk.Label(self, image=self.pencil_icon)
         edit_label.bind("<ButtonRelease-1>", self._edit_mode_start)
         edit_label.pack(side=tkinter.LEFT)
 
@@ -164,7 +174,7 @@ class EditableText(tkinter.Frame):
         self.child_widgets.append(edit_label)
 
     def _render_edit_mode(self):
-        text_entry = tkinter.Entry(self, textvariable=self.text)
+        text_entry = tkinter.ttk.Entry(self, textvariable=self.text)
         text_entry.pack(side=tkinter.LEFT)
         text_entry.bind("<Return>", self._edit_mode_finish)
 
@@ -177,33 +187,46 @@ class EditableText(tkinter.Frame):
         tkinter.Label is not sufficient.
         (https://stackoverflow.com/a/31959529/2796349)
         """
+        style = tkinter.ttk.Style()
+        foreground = style.lookup("TFrame", "foreground")
+        background = style.lookup("TFrame", "background")
+
         if not hasattr(self, "_pencil_icon"):
             self._pencil_icon = tkinter.BitmapImage(
-                data=b"#define image_width 16\n#define image_height 16\nstatic char image_bits[] = {\n0x00,0x1c,0x00,0x3e,0x00,0x7f,0x80,0xf7,0xc0,0xf3,0xe0,0x79,0xf0,0x3c,0x78,\n0x1e,0x3c,0x0f,0x9c,0x07,0xcc,0x03,0xfc,0x01,0xfc,0x00,0x7c,0x00,0xff,0xff,\n0xff,0xff\n};"
+                data=b"#define image_width 16\n#define image_height 16\nstatic char image_bits[] = {\n0x00,0x1c,0x00,0x3e,0x00,0x7f,0x80,0xf7,0xc0,0xf3,0xe0,0x79,0xf0,0x3c,0x78,\n0x1e,0x3c,0x0f,0x9c,0x07,0xcc,0x03,0xfc,0x01,0xfc,0x00,0x7c,0x00,0xff,0xff,\n0xff,0xff\n};",
+                background=background,
+                foreground=foreground,
             )
         return self._pencil_icon
 
 
-class BulbFrame(tkinter.Frame):
+class BulbFrame(tkinter.ttk.Frame):
     async def _hue_callback(self):
-        return await update_bulb(self.bulb, None, self.hue_slider.get())
+        return await update_bulb(self.bulb, None, int(self.hue_slider.get()))
 
     async def _saturation_callback(self):
-        return await update_bulb(self.bulb, saturation=self.saturation_slider.get())
+        return await update_bulb(
+            self.bulb, int(saturation=self.saturation_slider.get())
+        )
 
     async def _brightness_callback(self):
-        return await update_bulb(self.bulb, self.brightness_slider.get())
+        logger.info("Brightness callback: {}".format(self.brightness_slider.get()))
+        return await update_bulb(self.bulb, int(self.brightness_slider.get()))
 
     async def _power_callback(self):
-        self.power_button["state"] = tkinter.DISABLED
+        self.power_button.state(["disabled"])
 
         try:
             await (self.bulb.turn_off() if self.bulb.is_on else self.bulb.turn_on())
             await self.bulb.update()
         finally:
-            self.power_button["relief"] = "sunken" if self.bulb.is_on else "raised"
+            self.power_button.state(
+                [
+                    "!disabled",
+                    "pressed" if self.bulb.is_on else "!pressed",
+                ]
+            )
             self.power_button["text"] = "Turn Off" if self.bulb.is_on else "Turn On"
-            self.power_button["state"] = tkinter.NORMAL
 
     @classmethod
     def for_bulb(cls, loop, bulb: kasa.SmartBulb, config, *args, **kwargs):
@@ -215,11 +238,11 @@ class BulbFrame(tkinter.Frame):
         self = cls(*args, **kwargs)
         self.bulb = bulb
 
-        self.hue_label = tkinter.Label(self, text="hue")
-        self.saturation_label = tkinter.Label(self, text="saturation")
-        self.brightness_label = tkinter.Label(self, text="brightness")
+        self.hue_label = tkinter.ttk.Label(self, text="hue")
+        self.saturation_label = tkinter.ttk.Label(self, text="saturation")
+        self.brightness_label = tkinter.ttk.Label(self, text="brightness")
 
-        self.hue_slider = tkinter.Scale(
+        self.hue_slider = tkinter.ttk.Scale(
             self, from_=0, to=360, orient=tkinter.HORIZONTAL
         )
         self.hue_slider.bind(
@@ -230,7 +253,7 @@ class BulbFrame(tkinter.Frame):
         )
         self.hue_slider.set(self.bulb.hsv[0])
 
-        self.saturation_slider = tkinter.Scale(
+        self.saturation_slider = tkinter.ttk.Scale(
             self, from_=0, to=100, orient=tkinter.HORIZONTAL
         )
         self.saturation_slider.bind(
@@ -241,7 +264,7 @@ class BulbFrame(tkinter.Frame):
         )
         self.saturation_slider.set(self.bulb.hsv[1])
 
-        self.brightness_slider = tkinter.Scale(
+        self.brightness_slider = tkinter.ttk.Scale(
             self, from_=0, to=100, orient=tkinter.HORIZONTAL
         )
         self.brightness_slider.bind(
@@ -260,12 +283,13 @@ class BulbFrame(tkinter.Frame):
             self, bulb_name, lambda new_device_name: logger.info(new_device_name)
         ).grid(column=0, row=0, columnspan=4)
 
-        self.power_button = tkinter.Button(
+        self.power_button = tkinter.ttk.Button(
             self,
             text="Turn Off" if self.bulb.is_on else "Turn On",
-            width=12,
-            relief="sunken" if self.bulb.is_on else "raised",
+            # relief="sunken" if self.bulb.is_on else "raised",
+            # pressed=self.bulb.is_on
         )
+        self.power_button.state(["pressed" if self.bulb.is_on else "!pressed"])
         self.power_button.bind(
             "<ButtonRelease-1>",
             lambda event, self=self, loop=loop: asyncio.run_coroutine_threadsafe(
@@ -328,7 +352,7 @@ class KasaDevices(tkinter.Frame):
 
         # TODO make sure that self.device_queue exists before exiting this function
 
-        self.refresh_button = tkinter.Button(
+        self.refresh_button = tkinter.ttk.Button(
             self, text="Refresh", command=self.start_refresh
         )
         self.refresh_button.pack(fill=tkinter.X)
@@ -359,11 +383,11 @@ class KasaDevices(tkinter.Frame):
 
     async def _do_refresh(self):
         logger.info("KasaDevices._do_refresh() called")
-        self.refresh_button["state"] = tkinter.DISABLED
+        self.refresh_button.state(["disabled"])
         self.refresh_button["text"] = "Refreshing..."
         await self.clear_devices()
         await kasa.Discover.discover(on_discovered=self.device_queue.put)
-        self.refresh_button["state"] = tkinter.NORMAL
+        self.refresh_button.state(["!disabled"])
         self.refresh_button["text"] = "Refresh"
 
     async def clear_devices(self):
