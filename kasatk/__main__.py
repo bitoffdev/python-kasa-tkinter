@@ -18,6 +18,22 @@ import kasa
 logger = logging.getLogger(__name__)
 
 
+def apoptosis():
+    """Tell the operating system to kill us. This is useful in case we cannot
+    die. For example, a child thread might refuse to die.
+    """
+    import os
+
+    # Windows option
+    if os.name == "nt":
+        import subprocess
+
+        subprocess.run(["taskkill", "/IM", str(os.getpid()), "/F"])
+    # *Nix option
+    else:
+        os.kill(os.getpid(), signal.SIGKILL)
+
+
 def resource_path(relative_path):
     """Find a resource in a PyInstaller executable, or in the local directory"""
     if hasattr(sys, "_MEIPASS"):
@@ -407,11 +423,9 @@ def main():
             # asyncio task that is hogging the CPU and not surrending control
             # via await.
             logger.warning("Failed to stop event thread.")
-            # Since asyncio is not behaving, we need to kill ourselves.
-            if os.name == "nt":
-                subprocess.run(["taskkill", "/IM", str(os.getpid()), "/F"])
-            else:
-                os.kill(os.getpid(), signal.SIGKILL)
+            # Since asyncio is not behaving, we need the operating system to
+            # end this process
+            apoptosis()
 
 
 if __name__ == "__main__":
