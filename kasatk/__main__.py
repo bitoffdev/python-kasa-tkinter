@@ -367,6 +367,7 @@ def main():
     root = tkinter.Tk()
     root.title("Kasa Devices")
     root.geometry("500x400")
+    root.iconbitmap("extra/icon.ico")
     scroll_frame = ScrollableFrame(root)
     KasaDevices(scroll_frame.scrollable_frame).pack()
     scroll_frame.pack(fill=tkinter.BOTH, expand=True)
