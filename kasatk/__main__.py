@@ -2,6 +2,9 @@
 import argparse
 import asyncio
 import logging
+import os
+import signal
+import subprocess
 import sys
 import threading
 import tkinter
@@ -369,9 +372,32 @@ def main():
     root.geometry("500x400")
     root.iconbitmap("extra/icon.ico")
     scroll_frame = ScrollableFrame(root)
-    KasaDevices(scroll_frame.scrollable_frame).pack()
+    device_frame = KasaDevices(scroll_frame.scrollable_frame)
+    device_frame.pack()
     scroll_frame.pack(fill=tkinter.BOTH, expand=True)
-    root.mainloop()
+    try:
+        root.mainloop()
+    except KeyboardInterrupt:
+        logger.info("Caught KeyboardInterrupt. Shutting down.")
+    finally:
+        logger.info("Tkinter mainloop has exited.")
+        # stop the event loop
+        device_frame.event_loop.call_soon_threadsafe(device_frame.event_loop.stop)
+        device_frame.event_loop.call_soon_threadsafe(device_frame.event_loop.close)
+
+        logger.info("Stopped asyncio event loop")
+        # wait up to three seconds
+        device_frame.event_thread.join(3)
+        if device_frame.event_thread.is_alive():
+            # If we get here, then it is likely that there is an uncooperative
+            # asyncio task that is hogging the CPU and not surrending control
+            # via await.
+            logger.warning("Failed to stop event thread.")
+            # Since asyncio is not behaving, we need to kill ourselves.
+            if os.name == "nt":
+                subprocess.run(["taskkill", "/IM", str(os.getpid()), "/F"])
+            else:
+                os.kill(os.getpid(), signal.SIGKILL)
 
 
 if __name__ == "__main__":
