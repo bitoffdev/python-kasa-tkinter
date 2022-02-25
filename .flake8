@@ -1,0 +1,11 @@
+# Hopefully, flake8 will eventually support pyproject.toml, but for now, we'll
+# put the settings here.
+[flake8]
+# In some cases, as determined by PEP 8, Black will enforce an equal amount of
+# whitespace around slice operators. Due to this, Flake8 will raise E203
+# whitespace before ':' warnings. Since this warning is not PEP 8 compliant,
+# Flake8 should be configured to ignore it via extend-ignore = E203.
+#
+# Let's leave line-length to black and tell flake8 to just ignore line length
+# (E501).
+ignore = E203, E501

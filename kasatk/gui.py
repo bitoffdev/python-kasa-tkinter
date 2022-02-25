@@ -4,7 +4,6 @@ import asyncio
 import logging
 import os
 import signal
-import subprocess
 import sys
 import threading
 import tkinter
@@ -64,9 +63,9 @@ async def update_bulb(bulb, brightness=None, hue=None, saturation=None):
 
     state: LightState = await bulb.get_light_state()
     await bulb.set_hsv(
-        hue if hue != None else state["hue"],
-        saturation if saturation != None else state["saturation"],
-        brightness if brightness != None else state["brightness"],
+        hue if hue is not None else state["hue"],
+        saturation if saturation is not None else state["saturation"],
+        brightness if brightness is not None else state["brightness"],
     )
 
 

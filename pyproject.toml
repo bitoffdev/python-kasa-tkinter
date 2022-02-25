@@ -11,10 +11,15 @@ packages = [
 # Here, we restrict the dependencies to be compatible with PyInstaller
 python = ">=3.7,<3.11"
 python-kasa = "0.4.0.dev2"
-typing-extensions = "3.7.4.3"
+typing-extensions = "^3.7.4.3"
 
 [tool.poetry.dev-dependencies]
 pyinstaller = "^4.9"
+black = "^22.1.0"
+flake8 = "^4.0.1"
+flake8-black = "^0.2.4"
+isort = "^5.10.1"
+flake8-isort = "^4.1.1"
 
 [tool.poetry.scripts]
 kasatk = "kasatk.gui:main"
@@ -22,3 +27,6 @@ kasatk = "kasatk.gui:main"
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.isort]
+profile = "black"

@@ -5,5 +5,4 @@
 #
 from kasatk.gui import main
 
-
 main()
