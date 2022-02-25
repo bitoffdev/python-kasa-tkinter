@@ -339,8 +339,6 @@ class BulbFrame(tkinter.ttk.Frame):
         self.power_button = tkinter.ttk.Button(
             self,
             text="Turn Off" if self.bulb.is_on else "Turn On",
-            # relief="sunken" if self.bulb.is_on else "raised",
-            # pressed=self.bulb.is_on
         )
         self.power_button.state(["pressed" if self.bulb.is_on else "!pressed"])
         self.power_button.bind(
@@ -351,7 +349,6 @@ class BulbFrame(tkinter.ttk.Frame):
         )
 
         self.power_button.grid(column=0, row=2, sticky="ns")
-        # self.power_button.grid(column=0, row=2)
 
         self.hue_label.grid(column=1, row=1)
         self.hue_slider.grid(column=1, row=2, sticky="ns")
