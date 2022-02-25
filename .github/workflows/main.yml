@@ -158,6 +158,7 @@ jobs:
           files: |
             kasatk.exe
             kasatk-linux-amd64
+          draft: true
           prerelease: true
           fail_on_unmatched_files: true
 
