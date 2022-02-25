@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "python-kasa-tkinter-gui"
+version = "0.1.0"
+description = "GUI for TP-Link Kasa devices on the local network using Tkinter"
+authors = ["Elliot Miller <elliot@bitoffdev.com>"]
+packages = [
+    { include = "kasatk" },
+]
+
+[tool.poetry.dependencies]
+# Here, we restrict the dependencies to be compatible with PyInstaller
+python = ">=3.7,<3.11"
+python-kasa = "0.4.0.dev2"
+typing-extensions = "3.7.4.3"
+
+[tool.poetry.dev-dependencies]
+pyinstaller = "^4.9"
+
+[tool.poetry.scripts]
+kasatk = "kasatk.gui:main"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

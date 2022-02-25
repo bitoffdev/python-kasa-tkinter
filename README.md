@@ -5,6 +5,10 @@ Tkinter.
 
 ![Screenshot](docs/2021-02-27_kasatk_demo.gif)
 
+## Linux
+
+See [docs/linux.md](docs/linux.md).
+
 ## Windows
 
 See [docs/windows.md](docs/windows.md).

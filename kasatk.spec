@@ -22,7 +22,7 @@ a = Analysis(['kasatk/__main__.py'],
              pathex=['.\\env\\Lib\\site-packages\\', '.'],
              binaries=[],
              # Note: the second item in each tuple MUST be a directory.
-             datas=[kasa_dist_info_datas(), (RELATIVE_ICON_PATH, "./extra")],
+             datas=[kasa_dist_info_datas(), (RELATIVE_ICON_PATH, "./extra"), (".", ".")],
              hiddenimports=[],
              hookspath=[],
              runtime_hooks=[],
