@@ -122,3 +122,42 @@ jobs:
           name: kasatk.exe
           path: ./dist/kasatk.exe
           if-no-files-found: error
+
+
+  #                                _
+  #  _ __  _ __ ___       _ __ ___| | ___  __ _ ___  ___
+  # | '_ \| '__/ _ \_____| '__/ _ \ |/ _ \/ _` / __|/ _ \
+  # | |_) | | |  __/_____| | |  __/ |  __/ (_| \__ \  __/
+  # | .__/|_|  \___|     |_|  \___|_|\___|\__,_|___/\___|
+  # |_|
+  pre-release:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Jobs that must succeed first
+    needs:
+      - test
+      - linux-build
+      - windows-build
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: kasatk.exe
+          path: kasatk.exe
+
+      - uses: actions/download-artifact@master
+        with:
+          name: kasatk-linux-amd64
+          path: kasatk-linux-amd64
+
+      - name: Pre-Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            kasatk.exe
+            kasatk-linux-amd64
+          prerelease: true
+          fail_on_unmatched_files: true
+
