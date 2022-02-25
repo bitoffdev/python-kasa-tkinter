@@ -152,20 +152,22 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: kasatk.exe
-          path: /tmp
-
       - uses: actions/download-artifact@v2
         with:
           name: kasatk-linux-amd64
-          path: /tmp
+
+      - name: List
+        shell: bash
+        run: |
+          ls -R .
 
       - name: Pre-Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
             Release.txt
-            /tmp/kasatk.exe
-            /tmp/kasatk-linux-amd64
+            kasatk.exe
+            kasatk-linux-amd64
           draft: true
           prerelease: true
           fail_on_unmatched_files: true
