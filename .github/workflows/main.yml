@@ -1,0 +1,124 @@
+#
+# Note: I originally had separate the Linux and Windows build jobs into
+# separate workflow files, but it did not seem like GitHub Actions would run
+# both.
+name: CI
+
+on:
+  push:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+
+  #  _            _
+  # | |_ ___  ___| |_
+  # | __/ _ \/ __| __|
+  # | ||  __/\__ \ |_
+  #  \__\___||___/\__|
+  #
+  test:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # Install Python
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v2
+        with:
+          # Semantic version range syntax or exact version of a Python version
+          python-version: '3.7'
+          # Optional - x64 or x86 architecture, defaults to x64
+          architecture: 'x64'
+
+      - name: Flake8
+        shell:
+        run: |
+          python3 -m pip install poetry
+          python3 -m poetry install
+          python3 -m poetry run flake8 .
+
+  #  _ _
+  # | (_)_ __  _   ___  __
+  # | | | '_ \| | | \ \/ /
+  # | | | | | | |_| |>  <
+  # |_|_|_| |_|\__,_/_/\_\
+  #
+  build-linux:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # Install Python
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v2
+        with:
+          # Semantic version range syntax or exact version of a Python version
+          python-version: '3.7'
+          # Optional - x64 or x86 architecture, defaults to x64
+          architecture: 'x64'
+
+      # Use PyInstaller to build ELF
+      - name: Build ELF
+        shell:
+        run: |
+          python3 -m pip install poetry
+          python3 -m poetry install
+          python3 -m poetry run pyinstaller kasatk.spec
+
+      - name: Upload the PyInstaller Build Artifact
+        uses: actions/upload-artifact@v2.2.2
+        with:
+          name: kasatk-linux-amd64
+          path: ./dist/kasatk
+          if-no-files-found: error
+
+  #           _           _
+  # __      _(_)_ __   __| | _____
+  # \ \ /\ / / | '_ \ / _` |/ _ \ \ /\ / / __|
+  #  \ V  V /| | | | | (_| | (_) \ V  V /\__ \
+  #   \_/\_/ |_|_| |_|\__,_|\___/ \_/\_/ |___/
+  #
+  build-windows:
+
+    # The type of runner that the job will run on
+    # https://github.blog/changelog/2021-11-16-github-actions-windows-server-2022-with-visual-studio-2022-is-now-generally-available-on-github-hosted-runners/
+    runs-on: windows-2022
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      # Install Python
+      - name: Set up Python 3.x
+        uses: actions/setup-python@v2
+        with:
+          # Semantic version range syntax or exact version of a Python version
+          python-version: '3.7'
+          # Optional - x64 or x86 architecture, defaults to x64
+          architecture: 'x64'
+
+      # Use PyInstaller to build EXE
+      - name: Build Exe
+        shell: pwsh
+        run: |
+          python.exe -m pip install poetry
+          python.exe -m poetry install
+          python.exe -m poetry run pyinstaller kasatk.spec
+
+      # Save the created EXE file as a build artifact that may be downloaded
+      - name: Upload the PyInstaller Windows Build Artifact
+        uses: actions/upload-artifact@v2.2.2
+        with:
+          name: kasatk.exe
+          path: ./dist/kasatk.exe
+          if-no-files-found: error
