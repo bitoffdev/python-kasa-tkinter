@@ -137,8 +137,8 @@ jobs:
     # Jobs that must succeed first
     needs:
       - test
-      - linux-build
-      - windows-build
+      - build-linux
+      - build-windows
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
