@@ -33,7 +33,7 @@ jobs:
         run: |
           python.exe -m pip install poetry
           python.exe -m poetry install
-          python.exe -m poetry run pyinstaller
+          python.exe -m poetry run pyinstaller kasatk.spec
 
       # Save the created EXE file as a build artifact that may be downloaded
       - name: Upload the PyInstaller Windows Build Artifact
