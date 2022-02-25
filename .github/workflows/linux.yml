@@ -1,18 +1,18 @@
-name: Windows Build
+name: Linux Build
 
 on:
   push:
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
   build:
-
     # The type of runner that the job will run on
-    # https://github.blog/changelog/2021-11-16-github-actions-windows-server-2022-with-visual-studio-2022-is-now-generally-available-on-github-hosted-runners/
-    runs-on: windows-2022
+    runs-on: ubuntu-latest
 
+    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
@@ -26,19 +26,18 @@ jobs:
           # Optional - x64 or x86 architecture, defaults to x64
           architecture: 'x64'
 
-      # Use PyInstaller to build EXE
-      - name: Build Exe
-        shell: pwsh
+      # Use PyInstaller to build ELF
+      - name: Build ELF
+        shell:
         run: |
-          python.exe -m pip install poetry
-          python.exe -m poetry install
-          python.exe -m poetry run pyinstaller kasatk.spec
+          python3 -m pip install poetry
+          python3 -m poetry install
+          python3 -m poetry run pyinstaller kasatk.spec
 
-      # Save the created EXE file as a build artifact that may be downloaded
-      - name: Upload the PyInstaller Windows Build Artifact
+      - name: Upload the PyInstaller Build Artifact
         uses: actions/upload-artifact@v2.2.2
         with:
-          name: kasatk.exe
-          path: ./dist/kasatk.exe
+          name: kasatk-linux-amd64
+          path: ./dist/kasatk
           if-no-files-found: error
 
