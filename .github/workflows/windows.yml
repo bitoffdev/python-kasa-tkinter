@@ -40,6 +40,6 @@ jobs:
         uses: actions/upload-artifact@v2.2.2
         with:
           name: kasatk.exe
-          path: ./dist/windows/kasatk.exe
+          path: ./dist/kasatk.exe
           if-no-files-found: error
 
