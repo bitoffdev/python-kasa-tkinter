@@ -12,3 +12,7 @@ See [docs/linux.md](docs/linux.md).
 ## Windows
 
 See [docs/windows.md](docs/windows.md).
+
+## Troubleshooting
+
+Be sure to run with the `-v` (ie. verbose) flag to view errors on the console.
