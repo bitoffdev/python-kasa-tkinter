@@ -202,6 +202,57 @@ class EditableText(tkinter.ttk.Frame):
         return self._pencil_icon
 
 
+class PlugFrame(tkinter.ttk.Frame):
+    async def _power_callback(self):
+        self.power_button.state(["disabled"])
+
+        try:
+            await (self.plug.turn_off() if self.plug.is_on else self.plug.turn_on())
+            await self.plug.update()
+        finally:
+            self.power_button.state(
+                [
+                    "!disabled",
+                    "pressed" if self.plug.is_on else "!pressed",
+                ]
+            )
+            self.power_button["text"] = "Turn Off" if self.plug.is_on else "Turn On"
+
+    @classmethod
+    def for_plug(cls, loop, plug: kasa.SmartPlug, config, *args, **kwargs):
+        """Create a new plug frame given a SmartPlug
+
+        ... note:: I think using a classmethod here is a better approach than
+        breaking the initializer interface of the parent Frame class.
+        """
+        self = cls(*args, **kwargs)
+        self.plug = plug
+
+        plug_name = getattr(self.plug, "alias", None) or self.plug.mac
+
+        # TODO See if we can update the device alias instead of just logging it
+        # here
+        EditableText(
+            self, plug_name, lambda new_device_name: logger.info(new_device_name)
+        ).grid(column=0, row=0, columnspan=4)
+
+        self.power_button = tkinter.ttk.Button(
+            self,
+            text="Turn Off" if self.plug.is_on else "Turn On",
+        )
+        self.power_button.state(["pressed" if self.plug.is_on else "!pressed"])
+        self.power_button.bind(
+            "<ButtonRelease-1>",
+            lambda event, self=self, loop=loop: asyncio.run_coroutine_threadsafe(
+                self._power_callback(), loop
+            ),
+        )
+
+        self.power_button.grid(column=0, row=2, columnspan=4, sticky="ns")
+
+        return self
+
+
 class BulbFrame(tkinter.ttk.Frame):
     async def _hue_callback(self):
         return await update_bulb(self.bulb, None, int(self.hue_slider.get()))
@@ -359,18 +410,25 @@ class KasaDevices(tkinter.Frame):
         )
         self.refresh_button.pack(fill=tkinter.X)
 
-    @property
-    def _bulbs(self):
-        return list(
-            filter(lambda d: d.device_type == kasa.DeviceType.Bulb, self.kasa_devices)
-        )
-
     async def update_widgets(self):
-        for bulb in self._bulbs:
-            if bulb.mac not in self.device_widgets:
-                w = BulbFrame.for_bulb(self.event_loop, bulb, self.config, master=self)
-                w.pack()
-                self.device_widgets[bulb.mac] = w
+        for device in self.kasa_devices:
+            # Skip devices that have already been added
+            if device.mac in self.device_widgets:
+                continue
+
+            if device.device_type == kasa.DeviceType.Bulb:
+                w = BulbFrame.for_bulb(
+                    self.event_loop, device, self.config, master=self
+                )
+            elif device.device_type == kasa.DeviceType.Plug:
+                w = PlugFrame.for_plug(
+                    self.event_loop, device, self.config, master=self
+                )
+            else:
+                continue
+
+            w.pack(fill=tkinter.X, expand=True)
+            self.device_widgets[device.mac] = w
 
     async def add_device(self, device):
         await device.update()
