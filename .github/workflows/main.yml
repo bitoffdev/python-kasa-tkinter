@@ -37,7 +37,7 @@ jobs:
           architecture: 'x64'
 
       - name: Flake8
-        shell:
+        shell: bash
         run: |
           python3 -m pip install poetry
           python3 -m poetry install
@@ -69,7 +69,7 @@ jobs:
 
       # Use PyInstaller to build ELF
       - name: Build ELF
-        shell:
+        shell: bash
         run: |
           python3 -m pip install poetry
           python3 -m poetry install
