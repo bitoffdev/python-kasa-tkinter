@@ -142,15 +142,18 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - uses: actions/download-artifact@master
+      # Note: "With v2, when an artifact is specified by the name input, there
+      # is no longer an extra directory that is created if the path input is
+      # not provided." I chose not to include the `path` argument to
+      # download-artifacts; therefore, the artifacts will land in this current
+      # directory rather than a subdirectory.
+      - uses: actions/download-artifact@v2
         with:
           name: kasatk.exe
-          path: kasatk.exe
 
-      - uses: actions/download-artifact@master
+      - uses: actions/download-artifact@v2
         with:
           name: kasatk-linux-amd64
-          path: kasatk-linux-amd64
 
       - name: Pre-Release
         uses: softprops/action-gh-release@v1
