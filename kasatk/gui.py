@@ -303,7 +303,7 @@ class BulbFrame(tkinter.ttk.Frame):
         # self.power_button.grid(column=0, row=2)
 
         self.hue_label.grid(column=1, row=1)
-        self.hue_slider.grid(column=1, row=2)
+        self.hue_slider.grid(column=1, row=2, sticky="ns")
 
         self.saturation_label.grid(column=2, row=1)
         self.saturation_slider.grid(column=2, row=2, sticky="ns")
