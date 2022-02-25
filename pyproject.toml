@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "python-kasa-tkinter-gui"
+name = "python-kasa-tkinter"
 version = "0.1.0"
 description = "GUI for TP-Link Kasa devices on the local network using Tkinter"
 authors = ["Elliot Miller <elliot@bitoffdev.com>"]
