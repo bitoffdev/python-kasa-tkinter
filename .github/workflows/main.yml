@@ -2,6 +2,10 @@
 # Note: I originally had separate the Linux and Windows build jobs into
 # separate workflow files, but it did not seem like GitHub Actions would run
 # both.
+# 
+# About artifacts: "Each artifact behaves as a file share. Uploading to the
+# same artifact multiple times in the same workflow can overwrite and append
+# already uploaded files"
 name: CI
 
 on:
@@ -74,12 +78,14 @@ jobs:
           python3 -m pip install poetry
           python3 -m poetry install
           python3 -m poetry run pyinstaller kasatk.spec
+          mv ./dist/kasatk ./dist/kasatk-linux-amd64
 
       - name: Upload the PyInstaller Build Artifact
         uses: actions/upload-artifact@v2.2.2
         with:
-          name: kasatk-linux-amd64
-          path: ./dist/kasatk
+          # The *artifact* name (an archive), not an individual file name
+          name: build
+          path: ./dist/kasatk-linux-amd64
           if-no-files-found: error
 
   #           _           _
@@ -119,7 +125,8 @@ jobs:
       - name: Upload the PyInstaller Windows Build Artifact
         uses: actions/upload-artifact@v2.2.2
         with:
-          name: kasatk.exe
+          # The *artifact* name (an archive), not an individual file name
+          name: build
           path: ./dist/kasatk.exe
           if-no-files-found: error
 
@@ -151,10 +158,7 @@ jobs:
       # directory rather than a subdirectory.
       - uses: actions/download-artifact@v2
         with:
-          name: kasatk.exe
-      - uses: actions/download-artifact@v2
-        with:
-          name: kasatk-linux-amd64
+          name: build
 
       - name: List
         shell: bash
