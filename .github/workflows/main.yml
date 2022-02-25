@@ -142,6 +142,8 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      - name: Generate Release.txt file
+        run: echo ${{ github.sha }} > Release.txt
       # Note: "With v2, when an artifact is specified by the name input, there
       # is no longer an extra directory that is created if the path input is
       # not provided." I chose not to include the `path` argument to
@@ -150,17 +152,20 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: kasatk.exe
+          path: /tmp
 
       - uses: actions/download-artifact@v2
         with:
           name: kasatk-linux-amd64
+          path: /tmp
 
       - name: Pre-Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            kasatk.exe
-            kasatk-linux-amd64
+            Release.txt
+            /tmp/kasatk.exe
+            /tmp/kasatk-linux-amd64
           draft: true
           prerelease: true
           fail_on_unmatched_files: true
