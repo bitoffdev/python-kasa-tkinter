@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import asyncio
+import concurrent
 import logging
 import os
 import signal
@@ -8,6 +9,7 @@ import sys
 import threading
 import tkinter
 import tkinter.font
+import tkinter.messagebox
 import tkinter.ttk
 
 try:
@@ -67,6 +69,20 @@ async def update_bulb(bulb, brightness=None, hue=None, saturation=None):
         saturation if saturation is not None else state["saturation"],
         brightness if brightness is not None else state["brightness"],
     )
+
+
+def _future_error_handler_callback(future):
+    """
+    Show error messages using tkinter windows to indicate failures
+    """
+    try:
+        # Setting the timeout to zero, though it should not matter since the
+        # future should already be completed.
+        future.result(timeout=0)
+    except concurrent.futures.TimeoutError:
+        tkinter.messagebox.showwarning(title="Whoops.", message="Operation timed out.")
+    except Exception:
+        tkinter.messagebox.showwarning(title="Whoops.", message="Something went wrong.")
 
 
 class ScrollableFrame(tkinter.ttk.Frame):
@@ -292,6 +308,24 @@ class BulbFrame(tkinter.ttk.Frame):
         self = cls(*args, **kwargs)
         self.bulb = bulb
 
+        def wrap_callback(f):
+            """
+            Wrap asynchronous callback as a synchronous callback and handle
+            errors
+            """
+            nonlocal loop
+
+            def _wrapped(_event):
+                nonlocal f, loop
+
+                future = asyncio.run_coroutine_threadsafe(f(), loop)
+                # Originally, I was waiting on future.result here, but blocking
+                # on the result seems to cause issues with the kasa library, so
+                # we'll settle for a callback instead.
+                future.add_done_callback(_future_error_handler_callback)
+
+            return _wrapped
+
         self.hue_label = tkinter.ttk.Label(self, text="hue")
         self.saturation_label = tkinter.ttk.Label(self, text="saturation")
         self.brightness_label = tkinter.ttk.Label(self, text="brightness")
@@ -299,22 +333,14 @@ class BulbFrame(tkinter.ttk.Frame):
         self.hue_slider = tkinter.ttk.Scale(
             self, from_=0, to=360, orient=tkinter.HORIZONTAL
         )
-        self.hue_slider.bind(
-            "<ButtonRelease-1>",
-            lambda event, self=self, loop=loop: asyncio.run_coroutine_threadsafe(
-                self._hue_callback(), loop
-            ),
-        )
+        self.hue_slider.bind("<ButtonRelease-1>", wrap_callback(self._hue_callback))
         self.hue_slider.set(self.bulb.hsv[0])
 
         self.saturation_slider = tkinter.ttk.Scale(
             self, from_=0, to=100, orient=tkinter.HORIZONTAL
         )
         self.saturation_slider.bind(
-            "<ButtonRelease-1>",
-            lambda event, self=self, loop=loop: asyncio.run_coroutine_threadsafe(
-                self._saturation_callback(), loop
-            ),
+            "<ButtonRelease-1>", wrap_callback(self._saturation_callback)
         )
         self.saturation_slider.set(self.bulb.hsv[1])
 
@@ -322,10 +348,7 @@ class BulbFrame(tkinter.ttk.Frame):
             self, from_=0, to=100, orient=tkinter.HORIZONTAL
         )
         self.brightness_slider.bind(
-            "<ButtonRelease-1>",
-            lambda event, self=self, loop=loop: asyncio.run_coroutine_threadsafe(
-                self._brightness_callback(), loop
-            ),
+            "<ButtonRelease-1>", wrap_callback(self._brightness_callback)
         )
         self.brightness_slider.set(self.bulb.brightness)
 
