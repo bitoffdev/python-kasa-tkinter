@@ -255,16 +255,17 @@ class PlugFrame(tkinter.ttk.Frame):
 
 class BulbFrame(tkinter.ttk.Frame):
     async def _hue_callback(self):
-        return await update_bulb(self.bulb, None, int(self.hue_slider.get()))
+        return await update_bulb(self.bulb, hue=int(self.hue_slider.get()))
 
     async def _saturation_callback(self):
         return await update_bulb(
-            self.bulb, int(saturation=self.saturation_slider.get())
+            self.bulb, saturation=int(self.saturation_slider.get())
         )
 
     async def _brightness_callback(self):
-        logger.info("Brightness callback: {}".format(self.brightness_slider.get()))
-        return await update_bulb(self.bulb, int(self.brightness_slider.get()))
+        return await update_bulb(
+            self.bulb, brightness=int(self.brightness_slider.get())
+        )
 
     async def _power_callback(self):
         self.power_button.state(["disabled"])
